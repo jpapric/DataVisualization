@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EV Market Analytics</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://unpkg.com/topojson-client@3/dist/topojson-client.min.js"></script>
+</head>
+<body>
+<div class="app">
+
+    <!-- HEADER -->
+    <header class="header">
+        <div class="header-left">
+            <h1 class="header-title">EV Market Analytics</h1>
+            <p class="header-sub">Interactive visualization of global EV market trends</p>
+        </div>
+    </header>
+
+    <!-- KPI CARDS -->
+    <section class="kpi-row">
+        <div class="kpi-card">
+            <div class="kpi-top">
+                <span class="kpi-label">Total EV Sales</span>
+                <span class="kpi-badge positive" id="kpi-sales-change">…</span>
+            </div>
+            <div class="kpi-value" id="kpi-sales">…</div>
+            <svg class="sparkline" id="spark-sales"></svg>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-top">
+                <span class="kpi-label">Top Manufacturer <span class="kpi-geo">(WA)</span></span>
+                <span class="kpi-badge positive" id="kpi-make-change">…</span>
+            </div>
+            <div class="kpi-value" id="kpi-top-make">…</div>
+            <svg class="sparkline" id="spark-make"></svg>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-top">
+                <span class="kpi-label">BEV Market Share</span>
+                <span class="kpi-badge positive" id="kpi-bev-change">…</span>
+            </div>
+            <div class="kpi-value" id="kpi-bev-share">…</div>
+            <svg class="sparkline" id="spark-bev"></svg>
+        </div>
+                <div class="kpi-card">
+            <div class="kpi-top">
+                <span class="kpi-label">Average Range</span>
+                <span class="kpi-badge-note">across all models</span>
+            </div>
+            <div class="kpi-value" id="kpi-avg-range">…</div>
+        </div>
+    </section>
+
+    <!-- TABS -->
+    <nav class="tabs">
+        <button class="ev-tab-btn active" data-tab="overview">Overview</button>
+        <button class="ev-tab-btn" data-tab="manufacturers">Manufacturers</button>
+        <button class="ev-tab-btn" data-tab="technical">Technical Analysis</button>
+        <button class="ev-tab-btn" data-tab="geography">Geography</button>
+        <button class="ev-tab-btn" data-tab="timeline">Timeline</button>
+    </nav>
+
+    <!-- OVERVIEW -->
+    <div id="panel-overview" class="ev-tab-panel active">
+        <div class="panel-card">
+            <div class="panel-header">
+                <div>
+                    <h2 class="panel-title">EV Sales Through Years</h2>
+                    <p class="panel-sub">BEV vs PHEV global trend, 2010–2024</p>
+                </div>
+                <span class="source-badge">IEA Global EV Data</span>
+            </div>
+            <div class="chart-wrap chart-main">
+                <svg id="lineChart"></svg>
+            </div>
+        </div>
+    </div>
+
+    <!-- MANUFACTURERS -->
+    <div id="panel-manufacturers" class="ev-tab-panel">
+        <div class="panel-card">
+            <div class="panel-header">
+                <div>
+                    <h2 class="panel-title">Top Manufacturers</h2>
+                    <p class="panel-sub">Registered EVs by make — Washington State</p>
+                </div>
+                <span class="source-badge">WA State DMV Registrations</span>
+            </div>
+            <div class="chart-wrap chart-main">
+                <svg id="barChart"></svg>
+            </div>
+        </div>
+    </div>
+
+    <!-- TECHNICAL ANALYSIS -->
+    <div id="panel-technical" class="ev-tab-panel">
+        <div class="panel-card">
+            <div class="panel-header">
+                <div>
+                    <h2 class="panel-title">Battery &amp; Range Comparison</h2>
+                    <p class="panel-sub">Top models — battery capacity vs driving range</p>
+                </div>
+                <span class="source-badge">EV Specs Database · Kaggle</span>
+            </div>
+            <div class="chart-wrap chart-main">
+                <svg id="divergingBar"></svg>
+            </div>
+        </div>
+        <div class="panel-card" style="margin-top: 20px">
+            <div class="panel-header">
+                <div>
+                    <h2 class="panel-title">Battery vs Range by Segment</h2>
+                    <p class="panel-sub">All EV models — battery capacity vs driving range, coloured by segment</p>
+                </div>
+                <span class="source-badge">EV Specs Database · Kaggle</span>
+            </div>
+            <div class="chart-wrap chart-main">
+                <svg id="scatterPlot"></svg>
+            </div>
+        </div>
+    </div>
+
+    <!-- GEOGRAPHY -->
+    <div id="panel-geography" class="ev-tab-panel">
+        <div class="panel-card">
+            <div class="panel-header">
+                <div>
+                    <h2 class="panel-title">EV Adoption by Country</h2>
+                    <p class="panel-sub">Latest year EV sales per tracked region</p>
+                </div>
+                <span class="source-badge">IEA Global EV Data</span>
+            </div>
+            <div class="chart-wrap chart-main">
+                <svg id="mapChart"></svg>
+            </div>
+        </div>
+    </div>
+
+    <!-- TIMELINE -->
+    <div id="panel-timeline" class="ev-tab-panel">
+        <div class="panel-card">
+            <div class="panel-header">
+                <div>
+                    <h2 class="panel-title">Segment Adoption Over Time</h2>
+                    <p class="panel-sub">EV registrations by vehicle segment &times; year — Washington State</p>
+                </div>
+                <span class="source-badge">WA State DMV Registrations</span>
+            </div>
+            <div class="chart-wrap chart-main">
+                <svg id="heatmap"></svg>
+            </div>
+        </div>
+    </div>
+
+</div>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
