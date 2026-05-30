@@ -1,10 +1,26 @@
 import { showTooltip, moveTooltip, hideTooltip } from './tooltip.js';
 
-// Horizontal bar chart  data: [{make, count}]
+// data: [{make, count}]
 export function createBarChart(data, containerId = "barChart") {
     const container = document.getElementById(containerId);
     if (!container) return;
 
+    //Sort controls 
+    const chartWrap = container.parentElement;
+    if (!chartWrap.querySelector(".chart-controls")) {
+        const ctrl = document.createElement("div");
+        ctrl.className = "chart-controls";
+        ctrl.innerHTML = `
+            <span class="ctrl-label">Sort</span>
+            <button class="ctrl-btn active" data-sort="count">By Registrations</button>
+            <button class="ctrl-btn"        data-sort="alpha">A – Z</button>
+        `;
+        chartWrap.insertBefore(ctrl, container);
+    }
+    const controls = chartWrap.querySelector(".chart-controls");
+    let sortKey = "count";
+
+    //SVG setup 
     const rect = container.getBoundingClientRect();
     const W = rect.width  || 900;
     const H = rect.height || 520;
@@ -19,67 +35,95 @@ export function createBarChart(data, containerId = "barChart") {
 
     const g = svg.append("g").attr("transform", `translate(${m.left},${m.top})`);
 
-    const sorted = [...data].sort((a, b) => b.count - a.count);
-    const maxVal = d3.max(sorted, d => d.count);
-
     const COLORS = ["#22c55e","#06b6d4","#8b5cf6","#f97316","#ec4899",
                     "#facc15","#38bdf8","#a3e635","#fb923c","#c084fc",
                     "#67e8f9","#86efac","#fde68a","#fca5a5","#d8b4fe"];
 
-    const y = d3.scaleBand()
-        .domain(sorted.map(d => d.make))
-        .range([0, h]).padding(0.22);
+    // Stable colour per make (by initial count rank)
+    const ranked = [...data].sort((a, b) => b.count - a.count);
+    const colorMap = new Map(ranked.map((d, i) => [d.make, COLORS[i % COLORS.length]]));
 
-    const x = d3.scaleLinear()
-        .domain([0, maxVal * 1.12])
-        .range([0, w]);
+    const x = d3.scaleLinear().domain([0, d3.max(data, d => d.count) * 1.12]).range([0, w]);
+    const y = d3.scaleBand().range([0, h]).padding(0.22);
 
-    // vertical grid
+    // Static grid
     g.append("g").attr("class", "grid")
         .call(d3.axisBottom(x).tickSize(h).tickFormat(""))
         .call(g => g.select(".domain").remove())
         .call(g => g.selectAll("line").attr("stroke", "#1a2235").attr("stroke-dasharray", "3,3"));
 
-    // y axis (make names)
-    g.append("g")
-        .call(d3.axisLeft(y).tickSize(0))
-        .call(g => g.select(".domain").remove())
-        .call(g => g.selectAll("text")
-            .attr("fill", "#9ca3af").attr("font-size", 13)
-            .attr("dx", -6));
+    const yAxisG = g.append("g").attr("class", "y-axis");
 
-    // x axis bottom
+    // Static x-axis
     g.append("g").attr("transform", `translate(0,${h})`)
         .call(d3.axisBottom(x).tickFormat(d => d >= 1e3 ? d3.format(".0f")(d / 1e3) + "k" : d).ticks(6))
         .call(g => g.select(".domain").attr("stroke", "#263044"))
         .call(g => g.selectAll("text").attr("fill", "#9ca3af").attr("font-size", 13))
         .call(g => g.selectAll("line").attr("stroke", "#263044"));
 
-    // bars
-    g.selectAll(".bar")
-        .data(sorted).enter().append("rect")
-        .attr("class", "bar")
-        .attr("y", d => y(d.make))
-        .attr("height", y.bandwidth())
-        .attr("x", 0).attr("width", 0)
-        .attr("rx", 4)
-        .attr("fill", (_, i) => COLORS[i % COLORS.length])
-        .on("mouseover", (event, d) => showTooltip(event,
-            `<strong>${d.make}</strong><br>${d3.format(",")(d.count)} registrations`))
-        .on("mousemove", moveTooltip)
-        .on("mouseout", hideTooltip)
-        .transition().duration(800).delay((_, i) => i * 40).ease(d3.easeCubicOut)
-        .attr("width", d => x(d.count));
+    //D3 Enter / Update / Exit 
+    function update(animate = true) {
+        const dur = animate ? 600 : 0;
+        const sorted = sortKey === "count"
+            ? [...data].sort((a, b) => b.count - a.count)
+            : [...data].sort((a, b) => a.make.localeCompare(b.make));
 
-    // value labels
-    g.selectAll(".bar-label")
-        .data(sorted).enter().append("text")
-        .attr("class", "bar-label")
-        .attr("y", d => y(d.make) + y.bandwidth() / 2 + 4)
-        .attr("x", d => x(d.count) + 7)
-        .attr("fill", "#9ca3af").attr("font-size", 13)
-        .attr("opacity", 0)
-        .text(d => d3.format(",")(d.count))
-        .transition().duration(800).delay((_, i) => i * 40 + 200)
-        .attr("opacity", 1);
+        y.domain(sorted.map(d => d.make));
+
+        // Y axis — UPDATE
+        yAxisG.transition().duration(dur)
+            .call(d3.axisLeft(y).tickSize(0))
+            .call(g => g.select(".domain").remove())
+            .call(g => g.selectAll("text").attr("fill", "#9ca3af").attr("font-size", 13).attr("dx", -6));
+
+        // Bars 
+        const bars = g.selectAll(".bar").data(sorted, d => d.make);
+
+        // ENTER
+        bars.enter().append("rect").attr("class", "bar")
+            .attr("y", d => y(d.make)).attr("height", y.bandwidth())
+            .attr("x", 0).attr("width", 0).attr("rx", 4)
+            .attr("fill", d => colorMap.get(d.make))
+            .on("mouseover", (event, d) => showTooltip(event,
+                `<strong>${d.make}</strong><br>${d3.format(",")(d.count)} registrations`))
+            .on("mousemove", moveTooltip).on("mouseout", hideTooltip)
+          // ENTER + UPDATE merged
+          .merge(bars)
+            .transition().duration(dur).ease(d3.easeCubicOut)
+            .attr("y", d => y(d.make)).attr("height", y.bandwidth())
+            .attr("width", d => x(d.count))
+            .attr("fill", d => colorMap.get(d.make));
+
+        // EXIT
+        bars.exit().transition().duration(dur / 2).attr("width", 0).remove();
+
+        // Labels
+        const labels = g.selectAll(".bar-label").data(sorted, d => d.make);
+
+        labels.enter().append("text").attr("class", "bar-label")
+            .attr("y", d => y(d.make) + y.bandwidth() / 2 + 4)
+            .attr("x", d => x(d.count) + 7)
+            .attr("fill", "#9ca3af").attr("font-size", 13).attr("opacity", 0)
+            .text(d => d3.format(",")(d.count))
+          .merge(labels)
+            .transition().duration(dur).ease(d3.easeCubicOut)
+            .attr("y", d => y(d.make) + y.bandwidth() / 2 + 4)
+            .attr("x", d => x(d.count) + 7)
+            .attr("opacity", 1)
+            .text(d => d3.format(",")(d.count));
+
+        labels.exit().transition().duration(dur / 2).attr("opacity", 0).remove();
+    }
+
+    update(true);
+
+    //Sort button handlers 
+    controls.querySelectorAll(".ctrl-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            controls.querySelectorAll(".ctrl-btn").forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            sortKey = btn.dataset.sort;
+            update(true);
+        });
+    });
 }

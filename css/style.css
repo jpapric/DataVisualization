@@ -31,7 +31,7 @@ body {
     padding: 28px 36px 60px;
 }
 
-/* ── Header ───────────────────────────────── */
+/* Header */
 .header {
     display: flex;
     align-items: flex-start;
@@ -72,7 +72,7 @@ body {
 }
 .filter-select:hover { border-color: var(--border2); }
 
-/* ── KPI Row ──────────────────────────────── */
+/* KPI Row */
 .kpi-row {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -129,7 +129,7 @@ body {
     height: 60px;
 }
 
-/* ── Tabs ─────────────────────────────────── */
+/* Tabs */
 .tabs {
     display: flex;
     gap: 4px;
@@ -160,11 +160,11 @@ body {
     font-weight: 600;
 }
 
-/* ── Tab panels ───────────────────────────── */
+/* Tab panels */
 .ev-tab-panel { display: none; }
 .ev-tab-panel.active { display: block; }
 
-/* ── Panel card ───────────────────────────── */
+/* Panel card */
 .panel-card {
     background: var(--card);
     border: 1px solid var(--border);
@@ -200,13 +200,13 @@ body {
     align-self: center;
 }
 
-/* ── Chart containers ─────────────────────── */
+/* Chart containers */
 .chart-wrap { width: 100%; position: relative; }
 .chart-wrap svg { width: 100%; height: 100%; display: block; }
 
 .chart-main { height: 480px; }
 
-/* ── Tooltip ──────────────────────────────── */
+/* Tooltip */
 .ev-tooltip {
     position: fixed;
     background: #1a2235;
@@ -223,14 +223,14 @@ body {
     max-width: 220px;
 }
 
-/* ── D3 axis shared styles ────────────────── */
+/* D3 axis shared styles */
 .domain  { stroke: var(--border2) !important; }
 .tick line { stroke: var(--border2) !important; }
 .tick text { fill: var(--text2) !important; font-size: 13px; }
 .grid .tick line  { stroke: #1a2235 !important; stroke-dasharray: 3,3; }
 .grid .domain     { display: none; }
 
-/* ── Line chart legend ────────────────────── */
+/* Line chart legend */
 .chart-legend {
     display: flex;
     gap: 18px;
@@ -255,7 +255,145 @@ body {
     width: 24px;
 }
 
-/* ── Map year slider ──────────────────────── */
+/* Chart controls (sort / filter buttons) */
+.chart-controls {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+.ctrl-label {
+    font-size: 0.75rem;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+}
+.ctrl-btn {
+    background: var(--surface);
+    color: var(--text2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 12px;
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+    white-space: nowrap;
+}
+.ctrl-btn:hover  { border-color: var(--border2); color: var(--text); }
+.ctrl-btn.active { background: var(--green); color: #000; border-color: var(--green); font-weight: 600; }
+
+/* Vehicle comparison */
+.cmp-segment-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    padding: 6px 12px;
+    background: rgba(34,197,94,0.08);
+    border: 1px solid rgba(34,197,94,0.25);
+    border-radius: 8px;
+}
+.cmp-segment-label {
+    font-size: 0.8rem;
+    color: var(--green);
+    flex: 1;
+}
+.cmp-clear-btn {
+    background: none;
+    border: none;
+    color: var(--text3);
+    font-size: 0.78rem;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: color 0.15s;
+}
+.cmp-clear-btn:hover { color: #ef4444; }
+.cmp-selectors {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+.cmp-select {
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 0.85rem;
+    outline: none;
+    cursor: pointer;
+    min-width: 220px;
+    flex: 1;
+    transition: border-color 0.15s;
+}
+.cmp-select:focus { border-color: var(--green); }
+.cmp-vs {
+    color: var(--text3);
+    font-weight: 700;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}
+.cmp-hint {
+    color: var(--text3);
+    font-size: 0.85rem;
+    padding: 24px 0;
+    text-align: center;
+}
+.cmp-header {
+    display: grid;
+    grid-template-columns: 1fr 140px 1fr;
+    padding: 10px 0 14px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 4px;
+}
+.cmp-name-left  { text-align: right;  font-weight: 700; font-size: 1rem; color: var(--green); padding-right: 12px; }
+.cmp-name-right { text-align: left;   font-weight: 700; font-size: 1rem; color: var(--cyan);  padding-left: 12px; }
+.cmp-row {
+    display: grid;
+    grid-template-columns: 1fr 140px 1fr;
+    padding: 11px 0;
+    border-bottom: 1px solid var(--border);
+    align-items: center;
+}
+.cmp-val {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--text2);
+}
+.cmp-val:first-child { text-align: right;  padding-right: 12px; }
+.cmp-val:last-child  { text-align: left;   padding-left: 12px; }
+.cmp-win-left  { color: var(--green) !important; }
+.cmp-win-right { color: var(--cyan)  !important; }
+.cmp-label {
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+/* Map play/pause button */
+.map-play-btn {
+    background: var(--card);
+    color: var(--green);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0 10px;
+    font-size: 1rem;
+    cursor: pointer;
+    height: 26px;
+    line-height: 24px;
+    flex-shrink: 0;
+    transition: background 0.15s;
+}
+.map-play-btn:hover { background: var(--border2); }
+
+/* Map year slider */
 .map-year-wrap {
     display: flex;
     align-items: center;

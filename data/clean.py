@@ -21,7 +21,7 @@ def write_json(name, data):
     print(f"  wrote {name}  ({n} records)")
 
 
-# ─── 1. EV SALES (global, 2010-2024) ─────────────────────────────────────────
+# 1. EV SALES (global, 2010-2024) 
 print("Processing ev_sales.csv …")
 
 sales_by_year = defaultdict(float)
@@ -59,12 +59,6 @@ for region, years in sales_by_region_year.items():
 region_year_list.sort(key=lambda d: (d["year"], d["region"]))
 write_json("sales_by_region_year.json", region_year_list)
 
-region_totals = {}
-for region, years in sales_by_region_year.items():
-    latest_year = max(years)
-    region_totals[region] = {"region": region, "year": latest_year, "sales": round(years[latest_year])}
-write_json("region_latest_sales.json", list(region_totals.values()))
-
 pt_year_list = []
 for year, pt_dict in sorted(powertrain_by_year.items()):
     for pt, sales in pt_dict.items():
@@ -72,7 +66,7 @@ for year, pt_dict in sorted(powertrain_by_year.items()):
 write_json("powertrain_by_year.json", pt_year_list)
 
 
-# ─── 2. EV POPULATION (Washington State registrations) ───────────────────────
+# 2. EV POPULATION (Washington State registrations) 
 print("Processing ev_population.csv …")
 
 def classify_segment(make, model):
@@ -112,8 +106,6 @@ def classify_segment(make, model):
     return 'Compact'
 
 make_counts = defaultdict(int)
-type_counts = defaultdict(int)
-year_counts = defaultdict(int)
 make_year_counts = defaultdict(lambda: defaultdict(int))
 segment_year_counts = defaultdict(lambda: defaultdict(int))
 
@@ -124,29 +116,20 @@ with open(os.path.join(BASE, "ev_population.csv"), encoding="utf-8") as f:
         make_upper = make.upper()
         model = row.get("Model", "").strip().upper()
         model_year = row.get("Model Year", "").strip()
-        ev_type = row.get("Electric Vehicle Type", "").strip()
-        ev_range = row.get("Electric Range", "").strip()
 
         if not make:
             continue
 
         make_counts[make] += 1
-
-        if ev_type:
-            label = "BEV" if "Battery Electric" in ev_type else "PHEV"
-            type_counts[label] += 1
-
+        
         if model_year.isdigit():
             yr = int(model_year)
-            year_counts[yr] += 1
             make_year_counts[make][yr] += 1
             seg = classify_segment(make_upper, model)
             segment_year_counts[seg][yr] += 1
 
 top_makes = sorted(make_counts.items(), key=lambda x: x[1], reverse=True)[:15]
 write_json("top_manufacturers.json", [{"make": m, "count": c} for m, c in top_makes])
-write_json("ev_type_share.json", [{"type": t, "count": c} for t, c in sorted(type_counts.items(), key=lambda x: x[1], reverse=True)])
-write_json("registrations_by_year.json", [{"year": y, "count": c} for y, c in sorted(year_counts.items())])
 
 # Tesla year trend for sparkline
 tesla_by_year = make_year_counts.get("Tesla", {})
@@ -166,7 +149,7 @@ for seg in SEGMENTS:
 write_json("segment_by_year.json", heatmap_rows)
 
 
-# ─── 3. EV SPECS ─────────────────────────────────────────────────────────────
+# 3. EV SPECS 
 print("Processing ev_specs.csv …")
 
 specs = []
@@ -219,4 +202,35 @@ with open(os.path.join(BASE, "ev_specs.csv"), encoding="utf-8") as f:
         })
 
 write_json("ev_specs.json", specs)
+
+
+# 4. FUTURE PROJECTIONS (IEA scenarios, World, all modes) 
+print("Processing future projections …")
+
+proj_agg = defaultdict(lambda: defaultdict(float))  # (scenario, year) -> total sales
+
+with open(os.path.join(BASE, "ev_sales.csv"), encoding="utf-8") as f:
+    reader = csv.DictReader(f)
+    for row in reader:
+        if row["parameter"] != "EV sales" or row["unit"] != "Vehicles":
+            continue
+        if row["region"] != "World":
+            continue
+        try:
+            year = int(row["year"])
+            value = float(row["value"])
+        except ValueError:
+            continue
+        if year <= 2024:
+            continue
+        cat = row["category"]
+        scenario = "STEPS" if "STEPS" in cat else "APS"
+        proj_agg[(scenario, year)]["total"] += value
+
+proj_list = [
+    {"scenario": scenario, "year": year, "sales": round(vals["total"])}
+    for (scenario, year), vals in sorted(proj_agg.items())
+]
+write_json("future_projections.json", proj_list)
+
 print(f"\nDone. Output in: {OUT}")

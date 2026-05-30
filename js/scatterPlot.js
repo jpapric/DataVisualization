@@ -1,14 +1,15 @@
 import { showTooltip, moveTooltip, hideTooltip } from './tooltip.js';
 
 // data: ev_specs [{brand, model, battery_kWh, range_km, efficiency_wh_km, accel_s, segment}]
-export function createScatterPlot(data, containerId = "scatterPlot") {
+// onSegmentSelect(segment|null) — cross-chart callback
+export function createScatterPlot(data, containerId = "scatterPlot", onSegmentSelect) {
     const container = document.getElementById(containerId);
     if (!container) return;
 
     const rect = container.getBoundingClientRect();
     const W = rect.width || 700;
     const H = rect.height || 420;
-    const m = { top: 24, right: 150, bottom: 52, left: 72 };
+    const m = { top: 24, right: 160, bottom: 52, left: 72 };
     const w = W - m.left - m.right;
     const h = H - m.top - m.bottom;
 
@@ -40,24 +41,22 @@ export function createScatterPlot(data, containerId = "scatterPlot") {
         .call(g => g.select(".domain").remove())
         .call(g => g.selectAll("line").attr("stroke", "#1e293b").attr("stroke-dasharray", "3,3"));
 
-    // Linear regression trend line
-    const n      = valid.length;
-    const sumX   = d3.sum(valid, d => d.battery_kWh);
-    const sumY   = d3.sum(valid, d => d.range_km);
-    const sumXY  = d3.sum(valid, d => d.battery_kWh * d.range_km);
-    const sumX2  = d3.sum(valid, d => d.battery_kWh ** 2);
+    // Trend line
+    const n     = valid.length;
+    const sumX  = d3.sum(valid, d => d.battery_kWh);
+    const sumY  = d3.sum(valid, d => d.range_km);
+    const sumXY = d3.sum(valid, d => d.battery_kWh * d.range_km);
+    const sumX2 = d3.sum(valid, d => d.battery_kWh ** 2);
     const slope  = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX ** 2);
     const interc = (sumY - slope * sumX) / n;
 
     g.append("line")
         .attr("x1", x(0)).attr("y1", y(interc))
         .attr("x2", x(xMax)).attr("y2", y(slope * xMax + interc))
-        .attr("stroke", "#374151").attr("stroke-width", 1.5)
-        .attr("stroke-dasharray", "6,4");
+        .attr("stroke", "#374151").attr("stroke-width", 1.5).attr("stroke-dasharray", "6,4");
     g.append("text")
         .attr("x", x(xMax * 0.55)).attr("y", y(slope * xMax * 0.55 + interc) - 8)
-        .attr("fill", "#4b5563").attr("font-size", 11).attr("text-anchor", "middle")
-        .text("trend");
+        .attr("fill", "#4b5563").attr("font-size", 11).attr("text-anchor", "middle").text("trend");
 
     // Axes
     g.append("g").attr("transform", `translate(0,${h})`)
@@ -71,7 +70,6 @@ export function createScatterPlot(data, containerId = "scatterPlot") {
         .call(g => g.selectAll("text").attr("fill", "#9ca3af").attr("font-size", 13))
         .call(g => g.selectAll("line").attr("stroke", "#334155"));
 
-    // Axis labels
     g.append("text").attr("fill", "#64748b").attr("font-size", 13)
         .attr("text-anchor", "middle").attr("x", w / 2).attr("y", h + 42)
         .text("Battery Capacity (kWh)");
@@ -84,8 +82,7 @@ export function createScatterPlot(data, containerId = "scatterPlot") {
     g.selectAll(".dot")
         .data(valid).enter().append("circle")
         .attr("class", "dot")
-        .attr("cx", d => x(d.battery_kWh))
-        .attr("cy", d => y(d.range_km))
+        .attr("cx", d => x(d.battery_kWh)).attr("cy", d => y(d.range_km))
         .attr("r", 0)
         .attr("fill", d => color(d.segment || "Other"))
         .attr("fill-opacity", 0.72)
@@ -99,20 +96,64 @@ export function createScatterPlot(data, containerId = "scatterPlot") {
             ].filter(Boolean).join("<br>");
             showTooltip(event, lines);
         })
-        .on("mousemove", moveTooltip)
-        .on("mouseout",  hideTooltip)
+        .on("mousemove", moveTooltip).on("mouseout", hideTooltip)
         .transition().duration(600).delay((_, i) => i * 1.5).ease(d3.easeCubicOut)
         .attr("r", 5);
 
-    // Legend
+    //Segment selection state 
+    let selectedSegment = null;
+
+    function applySelection(seg) {
+        selectedSegment = seg;
+        // D3 UPDATE — transition dot appearance
+        g.selectAll(".dot")
+            .transition().duration(300)
+            .attr("fill-opacity", d =>
+                !seg || (d.segment || "Other") === seg ? 0.72 : 0.08)
+            .attr("r", d =>
+                !seg || (d.segment || "Other") === seg ? 5 : 3);
+
+        // Update legend highlight
+        legend.selectAll(".leg-item").each(function(s) {
+            const isActive = !seg || s === seg;
+            d3.select(this).select("circle")
+                .transition().duration(300)
+                .attr("fill-opacity", isActive ? 0.9 : 0.2);
+            d3.select(this).select("text")
+                .transition().duration(300)
+                .attr("fill", isActive ? "#e5e7eb" : "#4b5563");
+        });
+
+        if (onSegmentSelect) onSegmentSelect(seg);
+    }
+
+    //Legend (clickable — cross-chart trigger) 
     const legend = g.append("g").attr("transform", `translate(${w + 18}, 10)`);
     segments.forEach((seg, i) => {
-        const ly = i * 24;
-        legend.append("circle")
-            .attr("cx", 5).attr("cy", ly + 5).attr("r", 5)
+        const ly  = i * 26;
+        const row = legend.append("g").attr("class", "leg-item").attr("data-seg", seg)
+            .style("cursor", "pointer")
+            .datum(seg);
+
+        row.append("circle")
+            .attr("cx", 5).attr("cy", ly + 5).attr("r", 6)
             .attr("fill", color(seg)).attr("fill-opacity", 0.85);
-        legend.append("text")
-            .attr("x", 16).attr("y", ly + 9)
+        row.append("text")
+            .attr("x", 17).attr("y", ly + 9)
             .attr("fill", "#9ca3af").attr("font-size", 12).text(seg);
+
+        // Click — toggle segment selection
+        row.on("click", () => {
+            applySelection(selectedSegment === seg ? null : seg);
+        });
+
+        // Hover hint
+        row.append("title").text(`Click to highlight ${seg} models`);
     });
+
+    // Clear selection hint text
+    legend.append("text")
+        .attr("x", 0).attr("y", segments.length * 26 + 16)
+        .attr("fill", "#4b5563").attr("font-size", 10)
+        .text("click segment to filter");
 }

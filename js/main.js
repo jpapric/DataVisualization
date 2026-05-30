@@ -1,14 +1,15 @@
 import { createLineChart }    from './lineChart.js';
 import { createBarChart }     from './barChart.js';
-import { createDivergingBar } from './divergingBar.js';
-import { createScatterPlot }  from './scatterPlot.js';
+import { createScatterPlot }    from './scatterPlot.js';
+import { createComparisonChart } from './comparisonChart.js';
 import { createMapChart }     from './mapChart.js';
 import { createStackedArea }  from './stackedArea.js';
+import { createFutureChart }  from './futureChart.js';
 
 const DATA = "data/processed/";
 
 async function loadAll() {
-    const [salesByYear, topMakers, powertrainByYear, regionYearData, specs, teslaByYear, segmentByYear] =
+    const [salesByYear, topMakers, powertrainByYear, regionYearData, specs, teslaByYear, segmentByYear, futureProjections] =
         await Promise.all([
             d3.json(DATA + "sales_by_year.json"),
             d3.json(DATA + "top_manufacturers.json"),
@@ -17,15 +18,16 @@ async function loadAll() {
             d3.json(DATA + "ev_specs.json"),
             d3.json(DATA + "tesla_by_year.json"),
             d3.json(DATA + "segment_by_year.json"),
+            d3.json(DATA + "future_projections.json"),
         ]);
-    return { salesByYear, topMakers, powertrainByYear, regionYearData, specs, teslaByYear, segmentByYear };
+    return { salesByYear, topMakers, powertrainByYear, regionYearData, specs, teslaByYear, segmentByYear, futureProjections };
 }
 
-// ── Sparkline ────────────────────────────────────────────────────────────────
+// Sparkline 
 function drawSparkline(svgId, data, valueKey, color = "#22c55e") {
     const el = document.getElementById(svgId);
     if (!el) return;
-    const W = el.parentElement.offsetWidth + 36;  // full card width (bleeds)
+    const W = el.parentElement.offsetWidth + 36;  
     const H = 60;
 
     const svg = d3.select(el).attr("viewBox", `0 0 ${W} ${H}`).attr("preserveAspectRatio", "none");
@@ -49,7 +51,7 @@ function drawSparkline(svgId, data, valueKey, color = "#22c55e") {
         .attr("d", line);
 }
 
-// ── KPI helpers ──────────────────────────────────────────────────────────────
+// KPI helpers 
 function setText(id, val) { const e = document.getElementById(id); if (e) e.textContent = val; }
 
 function pctChange(arr, key) {
@@ -67,15 +69,15 @@ function setBadge(id, pct, forceColor) {
     el.className = "kpi-badge " + (forceColor || (pct >= 0 ? "positive" : "negative"));
 }
 
-// ── Init ─────────────────────────────────────────────────────────────────────
+// Init 
 async function init() {
     let data;
     try { data = await loadAll(); }
     catch (err) { console.error("Failed to load data:", err); return; }
 
-    const { salesByYear, topMakers, powertrainByYear, regionYearData, specs, teslaByYear, segmentByYear } = data;
+    const { salesByYear, topMakers, powertrainByYear, regionYearData, specs, teslaByYear, segmentByYear, futureProjections } = data;
 
-    // ── KPI values ──
+    // KPI values 
     const latestSales = salesByYear[salesByYear.length - 1];
     setText("kpi-sales",    d3.format(".3s")(latestSales?.sales ?? 0).replace("G","B"));
     setText("kpi-year",     latestSales?.year ?? "");
@@ -84,13 +86,12 @@ async function init() {
 
     // BEV share for latest year
     const bevRows = powertrainByYear.filter(d => d.powertrain === "BEV");
-    const allRows = powertrainByYear;
     const latestYr = d3.max(powertrainByYear, d => d.year);
     const bevLatest = d3.sum(powertrainByYear.filter(d => d.year === latestYr && d.powertrain === "BEV"), d => d.sales);
     const allLatest = d3.sum(powertrainByYear.filter(d => d.year === latestYr), d => d.sales);
     setText("kpi-bev-share", Math.round(bevLatest / allLatest * 100) + "%");
 
-    // ── KPI badges ──
+    // KPI badges
     setBadge("kpi-sales-change", pctChange(salesByYear, "sales"));
     setBadge("kpi-make-change",  pctChange(teslaByYear,  "count"));
     const bevPrev = d3.sum(powertrainByYear.filter(d => d.year === latestYr - 1 && d.powertrain === "BEV"), d => d.sales);
@@ -100,12 +101,12 @@ async function init() {
     setBadge("kpi-bev-change", bevShareLatest !== null && bevSharePrev !== null
         ? (bevShareLatest - bevSharePrev) * 100 : null);
 
-    // ── Sparklines ──
+    // Sparklines
     drawSparkline("spark-sales", salesByYear,  "sales",  "#22c55e");
     drawSparkline("spark-make",  teslaByYear,  "count",  "#06b6d4");
     drawSparkline("spark-bev",   bevRows.sort((a,b) => a.year - b.year), "sales", "#f97316");
 
-    // ── Lazy chart rendering ──
+    // Lazy chart rendering
     const rendered = new Set();
 
     function renderTab(tab) {
@@ -117,18 +118,20 @@ async function init() {
         } else if (tab === "manufacturers") {
             createBarChart(topMakers, "barChart");
         } else if (tab === "technical") {
-            createDivergingBar(specs, "divergingBar");
-            createScatterPlot(specs, "scatterPlot");
+            const { filterBySegment } = createComparisonChart(specs, "comparisonChart");
+            createScatterPlot(specs, "scatterPlot", segment => filterBySegment(segment));
         } else if (tab === "geography") {
             createMapChart(regionYearData, "mapChart");
         } else if (tab === "timeline") {
             createStackedArea(segmentByYear, "heatmap");
+        } else if (tab === "future") {
+            createFutureChart(salesByYear, futureProjections, "futureChart");
         }
     }
 
     renderTab("overview");
 
-    // ── Tab switching ──
+    // Tab switching 
     document.querySelectorAll(".ev-tab-btn").forEach(btn => {
         btn.addEventListener("click", () => {
             const tab = btn.dataset.tab;

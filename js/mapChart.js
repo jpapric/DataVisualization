@@ -1,39 +1,87 @@
 import { showTooltip, moveTooltip, hideTooltip } from './tooltip.js';
 
+// Maps data region names → ISO3 (for sales lookup)
 const REGION_TO_ISO = {
     "Australia":"AUS","Austria":"AUT","Belgium":"BEL","Brazil":"BRA",
-    "Canada":"CAN","Chile":"CHL","China":"CHN","Colombia":"COL",
-    "Croatia":"HRV","Czech Republic":"CZE","Denmark":"DNK",
-    "Finland":"FIN","France":"FRA","Germany":"DEU","Greece":"GRC",
-    "Hungary":"HUN","Iceland":"ISL","India":"IND","Indonesia":"IDN",
-    "Ireland":"IRL","Israel":"ISR","Italy":"ITA","Japan":"JPN",
-    "Korea":"KOR","Mexico":"MEX","Netherlands":"NLD",
+    "Bulgaria":"BGR","Canada":"CAN","Chile":"CHL","China":"CHN","Colombia":"COL",
+    "Costa Rica":"CRI","Croatia":"HRV","Cyprus":"CYP","Czech Republic":"CZE",
+    "Denmark":"DNK","Estonia":"EST","Finland":"FIN","France":"FRA",
+    "Germany":"DEU","Greece":"GRC","Hungary":"HUN","Iceland":"ISL",
+    "India":"IND","Indonesia":"IDN","Ireland":"IRL","Israel":"ISR",
+    "Italy":"ITA","Japan":"JPN","Korea":"KOR","Latvia":"LVA",
+    "Lithuania":"LTU","Luxembourg":"LUX","Mexico":"MEX","Netherlands":"NLD",
     "New Zealand":"NZL","Norway":"NOR","Poland":"POL","Portugal":"PRT",
-    "Romania":"ROU","Slovakia":"SVK","Slovenia":"SVN","South Africa":"ZAF",
-    "Spain":"ESP","Sweden":"SWE","Switzerland":"CHE","Thailand":"THA",
-    "Turkey":"TUR","United Kingdom":"GBR","United States of America":"USA",
-    "USA":"USA","UK":"GBR"
+    "Romania":"ROU","Seychelles":"SYC","Slovakia":"SVK","Slovenia":"SVN",
+    "South Africa":"ZAF","Spain":"ESP","Sweden":"SWE","Switzerland":"CHE",
+    "Thailand":"THA","Turkey":"TUR","Turkiye":"TUR","United Arab Emirates":"ARE",
+    "United Kingdom":"GBR","United States of America":"USA","USA":"USA","UK":"GBR"
 };
 
+// Maps TopoJSON numeric ID → ISO3
 const NUMERIC_TO_ISO3 = {
-    4:"AFG",8:"ALB",12:"DZA",24:"AGO",32:"ARG",36:"AUS",40:"AUT",
-    50:"BGD",56:"BEL",64:"BTN",68:"BOL",76:"BRA",100:"BGR",104:"MMR",
-    116:"KHM",120:"CMR",124:"CAN",144:"LKA",152:"CHL",156:"CHN",
-    170:"COL",188:"CRI",191:"HRV",196:"CYP",203:"CZE",208:"DNK",
-    214:"DOM",218:"ECU",818:"EGY",222:"SLV",231:"ETH",233:"EST",
-    246:"FIN",250:"FRA",266:"GAB",276:"DEU",288:"GHA",300:"GRC",
-    320:"GTM",332:"HTI",340:"HND",348:"HUN",352:"ISL",356:"IND",
-    360:"IDN",364:"IRN",368:"IRQ",372:"IRL",376:"ISR",380:"ITA",
-    388:"JAM",392:"JPN",398:"KAZ",400:"JOR",404:"KEN",408:"PRK",
-    410:"KOR",414:"KWT",418:"LAO",422:"LBN",428:"LVA",440:"LTU",
-    442:"LUX",450:"MDG",458:"MYS",484:"MEX",496:"MNG",504:"MAR",
-    516:"NAM",524:"NPL",528:"NLD",554:"NZL",566:"NGA",578:"NOR",
-    586:"PAK",591:"PAN",598:"PNG",600:"PRY",604:"PER",608:"PHL",
-    616:"POL",620:"PRT",634:"QAT",642:"ROU",643:"RUS",682:"SAU",
-    686:"SEN",703:"SVK",705:"SVN",710:"ZAF",716:"ZWE",724:"ESP",
-    736:"SDN",752:"SWE",756:"CHE",760:"SYR",764:"THA",788:"TUN",
-    792:"TUR",800:"UGA",804:"UKR",784:"ARE",826:"GBR",834:"TZA",
-    840:"USA",858:"URY",860:"UZB",862:"VEN",704:"VNM",887:"YEM",894:"ZMB"
+    4:"AFG",8:"ALB",12:"DZA",24:"AGO",31:"AZE",32:"ARG",36:"AUS",40:"AUT",
+    44:"BHS",48:"BHR",50:"BGD",51:"ARM",56:"BEL",64:"BTN",68:"BOL",70:"BIH",
+    72:"BWA",76:"BRA",84:"BLZ",90:"SLB",96:"BRN",100:"BGR",104:"MMR",
+    108:"BDI",112:"BLR",116:"KHM",120:"CMR",124:"CAN",140:"CAF",144:"LKA",
+    148:"TCD",152:"CHL",156:"CHN",158:"TWN",170:"COL",174:"COM",178:"COG",
+    180:"COD",188:"CRI",191:"HRV",192:"CUB",196:"CYP",203:"CZE",204:"BEN",
+    208:"DNK",214:"DOM",218:"ECU",222:"SLV",231:"ETH",232:"ERI",233:"EST",
+    242:"FJI",246:"FIN",250:"FRA",262:"DJI",266:"GAB",268:"GEO",270:"GMB",
+    275:"PSE",276:"DEU",288:"GHA",300:"GRC",320:"GTM",324:"GIN",328:"GUY",
+    332:"HTI",340:"HND",348:"HUN",352:"ISL",356:"IND",360:"IDN",364:"IRN",
+    368:"IRQ",372:"IRL",376:"ISR",380:"ITA",384:"CIV",388:"JAM",392:"JPN",
+    398:"KAZ",400:"JOR",404:"KEN",408:"PRK",410:"KOR",414:"KWT",417:"KGZ",
+    418:"LAO",422:"LBN",426:"LSO",428:"LVA",430:"LBR",434:"LBY",440:"LTU",
+    442:"LUX",450:"MDG",454:"MWI",458:"MYS",466:"MLI",478:"MRT",480:"MUS",
+    484:"MEX",496:"MNG",498:"MDA",499:"MNE",504:"MAR",508:"MOZ",512:"OMN",
+    516:"NAM",524:"NPL",528:"NLD",548:"VUT",554:"NZL",558:"NIC",562:"NER",
+    566:"NGA",578:"NOR",586:"PAK",591:"PAN",598:"PNG",600:"PRY",604:"PER",
+    608:"PHL",616:"POL",620:"PRT",624:"GNB",626:"TLS",634:"QAT",642:"ROU",
+    643:"RUS",646:"RWA",682:"SAU",686:"SEN",688:"SRB",690:"SYC",694:"SLE",
+    702:"SGP",703:"SVK",704:"VNM",705:"SVN",706:"SOM",710:"ZAF",716:"ZWE",
+    724:"ESP",728:"SSD",736:"SDN",740:"SUR",748:"SWZ",752:"SWE",756:"CHE",
+    760:"SYR",762:"TJK",764:"THA",768:"TGO",780:"TTO",784:"ARE",788:"TUN",
+    792:"TUR",795:"TKM",800:"UGA",804:"UKR",807:"MKD",818:"EGY",826:"GBR",
+    834:"TZA",840:"USA",858:"URY",860:"UZB",862:"VEN",887:"YEM",894:"ZMB"
+};
+
+// ISO3 → display name for tooltip
+const ISO3_TO_NAME = {
+    AFG:"Afghanistan",ALB:"Albania",DZA:"Algeria",AGO:"Angola",AZE:"Azerbaijan",
+    ARG:"Argentina",AUS:"Australia",AUT:"Austria",BHS:"Bahamas",BHR:"Bahrain",
+    BGD:"Bangladesh",ARM:"Armenia",BEL:"Belgium",BTN:"Bhutan",BOL:"Bolivia",
+    BIH:"Bosnia and Herzegovina",BWA:"Botswana",BRA:"Brazil",BLZ:"Belize",
+    SLB:"Solomon Islands",BRN:"Brunei",BGR:"Bulgaria",MMR:"Myanmar",BDI:"Burundi",
+    BLR:"Belarus",KHM:"Cambodia",CMR:"Cameroon",CAN:"Canada",CAF:"Central African Republic",
+    LKA:"Sri Lanka",TCD:"Chad",CHL:"Chile",CHN:"China",TWN:"Taiwan",COL:"Colombia",
+    COM:"Comoros",COG:"Congo",COD:"DR Congo",CRI:"Costa Rica",HRV:"Croatia",
+    CUB:"Cuba",CYP:"Cyprus",CZE:"Czech Republic",BEN:"Benin",DNK:"Denmark",
+    DOM:"Dominican Republic",ECU:"Ecuador",SLV:"El Salvador",ETH:"Ethiopia",
+    ERI:"Eritrea",EST:"Estonia",FJI:"Fiji",FIN:"Finland",FRA:"France",
+    DJI:"Djibouti",GAB:"Gabon",GEO:"Georgia",GMB:"Gambia",PSE:"Palestine",
+    DEU:"Germany",GHA:"Ghana",GRC:"Greece",GTM:"Guatemala",GIN:"Guinea",
+    GUY:"Guyana",HTI:"Haiti",HND:"Honduras",HUN:"Hungary",ISL:"Iceland",
+    IND:"India",IDN:"Indonesia",IRN:"Iran",IRQ:"Iraq",IRL:"Ireland",ISR:"Israel",
+    ITA:"Italy",CIV:"Côte d'Ivoire",JAM:"Jamaica",JPN:"Japan",KAZ:"Kazakhstan",
+    JOR:"Jordan",KEN:"Kenya",PRK:"North Korea",KOR:"South Korea",KWT:"Kuwait",
+    KGZ:"Kyrgyzstan",LAO:"Laos",LBN:"Lebanon",LSO:"Lesotho",LVA:"Latvia",
+    LBR:"Liberia",LBY:"Libya",LTU:"Lithuania",LUX:"Luxembourg",MDG:"Madagascar",
+    MWI:"Malawi",MYS:"Malaysia",MLI:"Mali",MRT:"Mauritania",MUS:"Mauritius",
+    MEX:"Mexico",MNG:"Mongolia",MDA:"Moldova",MNE:"Montenegro",MAR:"Morocco",
+    MOZ:"Mozambique",NAM:"Namibia",NPL:"Nepal",NLD:"Netherlands",VUT:"Vanuatu",
+    NZL:"New Zealand",NIC:"Nicaragua",NER:"Niger",NGA:"Nigeria",NOR:"Norway",
+    OMN:"Oman",PAK:"Pakistan",PAN:"Panama",PNG:"Papua New Guinea",PRY:"Paraguay",
+    PER:"Peru",PHL:"Philippines",POL:"Poland",PRT:"Portugal",GNB:"Guinea-Bissau",
+    TLS:"Timor-Leste",QAT:"Qatar",ROU:"Romania",RUS:"Russia",RWA:"Rwanda",
+    SAU:"Saudi Arabia",SEN:"Senegal",SRB:"Serbia",SYC:"Seychelles",SLE:"Sierra Leone",
+    SGP:"Singapore",SVK:"Slovakia",VNM:"Vietnam",SVN:"Slovenia",SOM:"Somalia",
+    ZAF:"South Africa",ESP:"Spain",SSD:"South Sudan",SDN:"Sudan",SUR:"Suriname",
+    SWZ:"Eswatini",SWE:"Sweden",CHE:"Switzerland",SYR:"Syria",TJK:"Tajikistan",
+    THA:"Thailand",TGO:"Togo",TTO:"Trinidad and Tobago",ARE:"United Arab Emirates",
+    TUN:"Tunisia",TUR:"Turkey",TKM:"Turkmenistan",UGA:"Uganda",UKR:"Ukraine",
+    MKD:"North Macedonia",EGY:"Egypt",GBR:"United Kingdom",TZA:"Tanzania",
+    USA:"United States",URY:"Uruguay",UZB:"Uzbekistan",VEN:"Venezuela",
+    YEM:"Yemen",ZMB:"Zambia",ZWE:"Zimbabwe"
 };
 
 // regionYearData: [{region, year, sales}] — full multi-year dataset
@@ -45,7 +93,7 @@ export async function createMapChart(regionYearData, containerId = "mapChart") {
     const W = rect.width  || 1000;
     const H = rect.height || 560;
 
-    // ── Year slider ───────────────────────────────────────────────────
+    //Year slider 
     const years = [...new Set(regionYearData.map(d => d.year))].sort((a, b) => a - b);
     let currentYear = years[years.length - 1];
 
@@ -63,6 +111,42 @@ export async function createMapChart(regionYearData, containerId = "mapChart") {
     const slider   = sliderWrap.querySelector(".map-year-slider");
     const yearVal  = sliderWrap.querySelector(".map-year-val");
 
+    //Play / Pause button 
+    const playBtn = document.createElement("button");
+    playBtn.className = "map-play-btn";
+    playBtn.textContent = "▶";
+    sliderWrap.appendChild(playBtn);
+
+    let playInterval = null;
+
+    function stopPlay() {
+        clearInterval(playInterval);
+        playInterval = null;
+        playBtn.textContent = "▶";
+    }
+
+    function startPlay() {
+        playBtn.textContent = "⏸";
+        playInterval = setInterval(() => {
+            const next = +slider.value + 1;
+            if (next > years[years.length - 1]) { stopPlay(); return; }
+            slider.value = next;
+            slider.dispatchEvent(new Event("input"));
+        }, 800);
+    }
+
+    playBtn.addEventListener("click", () => {
+        if (playInterval) {
+            stopPlay();
+        } else {
+            if (+slider.value === years[years.length - 1]) {
+                slider.value = years[0];
+                slider.dispatchEvent(new Event("input"));
+            }
+            startPlay();
+        }
+    });
+
     function getSalesMap(year) {
         const map = new Map();
         regionYearData
@@ -76,7 +160,7 @@ export async function createMapChart(regionYearData, containerId = "mapChart") {
 
     let salesMap = getSalesMap(currentYear);
 
-    // ── SVG setup ────────────────────────────────────────────────────
+    //SVG setup 
     const svg = d3.select(container)
         .attr("viewBox", `0 0 ${W} ${H}`)
         .attr("preserveAspectRatio", "none")
@@ -87,7 +171,7 @@ export async function createMapChart(regionYearData, containerId = "mapChart") {
     const g       = svg.append("g");
     const overlay = svg.append("g");
 
-    // ── Zoom ─────────────────────────────────────────────────────────
+    //Zoom 
     const zoom = d3.zoom()
         .scaleExtent([1, 12])
         .on("zoom", event => g.attr("transform", event.transform));
@@ -101,7 +185,7 @@ export async function createMapChart(regionYearData, containerId = "mapChart") {
     }
     bgRect.on("click", resetZoom);
 
-    // ── Load world topology ───────────────────────────────────────────
+    //Load world topology 
     let world;
     try {
         world = await d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json");
@@ -125,28 +209,49 @@ export async function createMapChart(regionYearData, containerId = "mapChart") {
 
     let colorScale = makeColorScale(salesMap);
 
-    // ── Country paths ─────────────────────────────────────────────────
+    // Set of ISO3 codes that have data in ANY year (for permanent interactivity)
+    const isoWithAnyData = new Set(
+        regionYearData.map(d => REGION_TO_ISO[d.region]).filter(Boolean)
+    );
+
+    function countryFill(d) {
+        const iso = NUMERIC_TO_ISO3[+d.id];
+        if (!iso || !isoWithAnyData.has(iso)) return "#0c1420"; // no data ever — blend into bg
+        return salesMap.get(iso) ? colorScale(salesMap.get(iso)) : "#1a2e45"; // data country, but not this year
+    }
+
+    function countryStroke(d) {
+        const iso = NUMERIC_TO_ISO3[+d.id];
+        return (iso && isoWithAnyData.has(iso)) ? "#1a3a52" : "#0d1a2e";
+    }
+
+    //Country paths 
     g.selectAll("path")
         .data(countries.features)
         .enter().append("path")
         .attr("d", path)
-        .attr("fill", d => {
+        .attr("fill", d => countryFill(d))
+        .attr("stroke", d => countryStroke(d))
+        .attr("stroke-width", 0.4)
+        // Only data countries are interactive
+        .attr("pointer-events", d => {
             const iso = NUMERIC_TO_ISO3[+d.id];
-            return salesMap.get(iso) ? colorScale(salesMap.get(iso)) : "#1a2235";
+            return (iso && isoWithAnyData.has(iso)) ? "all" : "none";
         })
-        .attr("stroke", "#0d1a2e").attr("stroke-width", 0.4)
         .on("mouseover", (event, d) => {
             const iso   = NUMERIC_TO_ISO3[+d.id];
             const sales = salesMap.get(iso);
-            const name  = Object.keys(REGION_TO_ISO).find(k => REGION_TO_ISO[k] === iso) || iso || "Unknown";
-            d3.select(event.currentTarget).attr("stroke", "#22c55e").attr("stroke-width", 1);
+            const name  = ISO3_TO_NAME[iso] || iso;
+            d3.select(event.currentTarget).attr("stroke", "#22c55e").attr("stroke-width", 1.5);
             showTooltip(event, sales
                 ? `<strong>${name}</strong> · ${currentYear}<br>${d3.format(",")(sales)} EVs sold`
-                : `<strong>${name}</strong><br>No data`);
+                : `<strong>${name}</strong><br>No data for ${currentYear}`);
         })
         .on("mousemove", moveTooltip)
         .on("mouseout", event => {
-            d3.select(event.currentTarget).attr("stroke", "#0d1a2e").attr("stroke-width", 0.4);
+            d3.select(event.currentTarget)
+                .attr("stroke", d => countryStroke(d))
+                .attr("stroke-width", 0.4);
             hideTooltip();
         })
         .on("click", (event, d) => {
@@ -155,7 +260,7 @@ export async function createMapChart(regionYearData, containerId = "mapChart") {
 
             const iso   = NUMERIC_TO_ISO3[+d.id];
             const sales = salesMap.get(iso);
-            const name  = Object.keys(REGION_TO_ISO).find(k => REGION_TO_ISO[k] === iso) || iso || "Unknown";
+            const name  = ISO3_TO_NAME[iso] || iso;
             const total = d3.sum([...salesMap.values()]);
 
             const [[x0, y0], [x1, y1]] = path.bounds(d);
@@ -164,7 +269,7 @@ export async function createMapChart(regionYearData, containerId = "mapChart") {
             const ty = H / 2 - scale * (y0 + y1) / 2;
             const t  = d3.zoomIdentity.translate(tx, ty).scale(scale);
 
-            g.selectAll("path").attr("stroke", "#0d1a2e").attr("stroke-width", 0.4);
+            g.selectAll("path").attr("stroke", d => countryStroke(d)).attr("stroke-width", 0.4);
             d3.select(event.currentTarget).attr("stroke", "#22c55e").attr("stroke-width", 1.5 / scale);
             svg.transition().duration(750).call(zoom.transform, t);
 
@@ -172,7 +277,7 @@ export async function createMapChart(regionYearData, containerId = "mapChart") {
             const [cx, cy] = path.centroid(d);
             const sx = Math.max(84, Math.min(W - 84, t.applyX(cx)));
             const sy = Math.max(32, Math.min(H - 32, t.applyY(cy)));
-            const pW = 168, pH = 56;
+            const pW = 180, pH = 56;
 
             overlay.append("rect")
                 .attr("x", sx - pW / 2).attr("y", sy - pH / 2)
@@ -193,11 +298,11 @@ export async function createMapChart(regionYearData, containerId = "mapChart") {
                 .attr("font-size", 12).attr("opacity", 0)
                 .text(sales
                     ? `${d3.format(",")(sales)} EVs · ${((sales / total) * 100).toFixed(1)}%`
-                    : "No data")
+                    : `No data for ${currentYear}`)
                 .transition().delay(730).duration(200).attr("opacity", 1);
         });
 
-    // ── Year slider handler ───────────────────────────────────────────
+    //Year slider handler 
     slider.addEventListener("input", e => {
         currentYear = +e.target.value;
         yearVal.textContent = currentYear;
@@ -209,13 +314,11 @@ export async function createMapChart(regionYearData, containerId = "mapChart") {
 
         g.selectAll("path")
             .transition().duration(350)
-            .attr("fill", d => {
-                const iso = NUMERIC_TO_ISO3[+d.id];
-                return salesMap.get(iso) ? colorScale(salesMap.get(iso)) : "#1a2235";
-            });
+            .attr("fill", d => countryFill(d))
+            .attr("stroke", d => countryStroke(d));
     });
 
-    // ── Legend ────────────────────────────────────────────────────────
+    //Legend 
     const legendW = 140, legendH = 8;
     const lx = W - legendW - 16, ly = H - 28;
     const defs = svg.append("defs");

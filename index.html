@@ -61,6 +61,7 @@
         <button class="ev-tab-btn" data-tab="technical">Technical Analysis</button>
         <button class="ev-tab-btn" data-tab="geography">Geography</button>
         <button class="ev-tab-btn" data-tab="timeline">Timeline</button>
+        <button class="ev-tab-btn" data-tab="future">Future Outlook</button>
     </nav>
 
     <!-- OVERVIEW -->
@@ -69,7 +70,7 @@
             <div class="panel-header">
                 <div>
                     <h2 class="panel-title">EV Sales Through Years</h2>
-                    <p class="panel-sub">BEV vs PHEV global trend, 2010–2024</p>
+                    <p class="panel-sub">BEV · PHEV · FCEV global sales trend, 2010–2023</p>
                 </div>
                 <span class="source-badge">IEA Global EV Data</span>
             </div>
@@ -100,26 +101,24 @@
         <div class="panel-card">
             <div class="panel-header">
                 <div>
-                    <h2 class="panel-title">Battery &amp; Range Comparison</h2>
-                    <p class="panel-sub">Top models — battery capacity vs driving range</p>
-                </div>
-                <span class="source-badge">EV Specs Database · Kaggle</span>
-            </div>
-            <div class="chart-wrap chart-main">
-                <svg id="divergingBar"></svg>
-            </div>
-        </div>
-        <div class="panel-card" style="margin-top: 20px">
-            <div class="panel-header">
-                <div>
                     <h2 class="panel-title">Battery vs Range by Segment</h2>
-                    <p class="panel-sub">All EV models — battery capacity vs driving range, coloured by segment</p>
+                    <p class="panel-sub">All EV models — battery capacity vs driving range, coloured by segment · click a segment to highlight</p>
                 </div>
                 <span class="source-badge">EV Specs Database · Kaggle</span>
             </div>
             <div class="chart-wrap chart-main">
                 <svg id="scatterPlot"></svg>
             </div>
+        </div>
+        <div class="panel-card" style="margin-top: 20px">
+            <div class="panel-header">
+                <div>
+                    <h2 class="panel-title">Vehicle Comparison</h2>
+                    <p class="panel-sub">Search and select up to 8 models to compare battery capacity and range side by side</p>
+                </div>
+                <span class="source-badge">EV Specs Database · Kaggle</span>
+            </div>
+            <div id="comparisonChart"></div>
         </div>
     </div>
 
@@ -151,6 +150,22 @@
             </div>
             <div class="chart-wrap chart-main">
                 <svg id="heatmap"></svg>
+            </div>
+        </div>
+    </div>
+
+    <!-- FUTURE OUTLOOK -->
+    <div id="panel-future" class="ev-tab-panel">
+        <div class="panel-card">
+            <div class="panel-header">
+                <div>
+                    <h2 class="panel-title">Future EV Sales Outlook</h2>
+                    <p class="panel-sub">IEA scenarios: Stated Policies (STEPS) vs Announced Pledges (APS), 2025–2035</p>
+                </div>
+                <span class="source-badge">IEA Global EV Data</span>
+            </div>
+            <div class="chart-wrap chart-main">
+                <svg id="futureChart"></svg>
             </div>
         </div>
     </div>
