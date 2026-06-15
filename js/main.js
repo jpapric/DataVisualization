@@ -23,7 +23,6 @@ async function loadAll() {
     return { salesByYear, topMakers, powertrainByYear, regionYearData, specs, teslaByYear, segmentByYear, futureProjections };
 }
 
-// Sparkline 
 function drawSparkline(svgId, data, valueKey, color = "#22c55e") {
     const el = document.getElementById(svgId);
     if (!el) return;
@@ -51,7 +50,7 @@ function drawSparkline(svgId, data, valueKey, color = "#22c55e") {
         .attr("d", line);
 }
 
-// KPI helpers 
+
 function setText(id, val) { const e = document.getElementById(id); if (e) e.textContent = val; }
 
 function pctChange(arr, key) {
@@ -69,7 +68,7 @@ function setBadge(id, pct, forceColor) {
     el.className = "kpi-badge " + (forceColor || (pct >= 0 ? "positive" : "negative"));
 }
 
-// Init 
+ 
 async function init() {
     let data;
     try { data = await loadAll(); }
@@ -77,21 +76,18 @@ async function init() {
 
     const { salesByYear, topMakers, powertrainByYear, regionYearData, specs, teslaByYear, segmentByYear, futureProjections } = data;
 
-    // KPI values 
     const latestSales = salesByYear[salesByYear.length - 1];
     setText("kpi-sales",    d3.format(".3s")(latestSales?.sales ?? 0).replace("G","B"));
     setText("kpi-year",     latestSales?.year ?? "");
     setText("kpi-top-make", topMakers[0]?.make ?? "");
     setText("kpi-avg-range", Math.round(d3.mean(specs, d => d.range_km)) + " km");
 
-    // BEV share for latest year
     const bevRows = powertrainByYear.filter(d => d.powertrain === "BEV");
     const latestYr = d3.max(powertrainByYear, d => d.year);
     const bevLatest = d3.sum(powertrainByYear.filter(d => d.year === latestYr && d.powertrain === "BEV"), d => d.sales);
     const allLatest = d3.sum(powertrainByYear.filter(d => d.year === latestYr), d => d.sales);
     setText("kpi-bev-share", Math.round(bevLatest / allLatest * 100) + "%");
 
-    // KPI badges
     setBadge("kpi-sales-change", pctChange(salesByYear, "sales"));
     setBadge("kpi-make-change",  pctChange(teslaByYear,  "count"));
     const bevPrev = d3.sum(powertrainByYear.filter(d => d.year === latestYr - 1 && d.powertrain === "BEV"), d => d.sales);
@@ -101,12 +97,12 @@ async function init() {
     setBadge("kpi-bev-change", bevShareLatest !== null && bevSharePrev !== null
         ? (bevShareLatest - bevSharePrev) * 100 : null);
 
-    // Sparklines
+    
     drawSparkline("spark-sales", salesByYear,  "sales",  "#22c55e");
     drawSparkline("spark-make",  teslaByYear,  "count",  "#06b6d4");
     drawSparkline("spark-bev",   bevRows.sort((a,b) => a.year - b.year), "sales", "#f97316");
 
-    // Lazy chart rendering
+
     const rendered = new Set();
 
     function renderTab(tab) {
@@ -131,7 +127,7 @@ async function init() {
 
     renderTab("overview");
 
-    // Tab switching 
+
     document.querySelectorAll(".ev-tab-btn").forEach(btn => {
         btn.addEventListener("click", () => {
             const tab = btn.dataset.tab;

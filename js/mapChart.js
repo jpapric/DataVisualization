@@ -1,6 +1,5 @@
 import { showTooltip, moveTooltip, hideTooltip } from './tooltip.js';
 
-// Maps data region names → ISO3 (for sales lookup)
 const REGION_TO_ISO = {
     "Australia":"AUS","Austria":"AUT","Belgium":"BEL","Brazil":"BRA",
     "Bulgaria":"BGR","Canada":"CAN","Chile":"CHL","China":"CHN","Colombia":"COL",
@@ -17,7 +16,6 @@ const REGION_TO_ISO = {
     "United Kingdom":"GBR","United States of America":"USA","USA":"USA","UK":"GBR"
 };
 
-// Maps TopoJSON numeric ID → ISO3
 const NUMERIC_TO_ISO3 = {
     4:"AFG",8:"ALB",12:"DZA",24:"AGO",31:"AZE",32:"ARG",36:"AUS",40:"AUT",
     44:"BHS",48:"BHR",50:"BGD",51:"ARM",56:"BEL",64:"BTN",68:"BOL",70:"BIH",
@@ -45,7 +43,6 @@ const NUMERIC_TO_ISO3 = {
     834:"TZA",840:"USA",858:"URY",860:"UZB",862:"VEN",887:"YEM",894:"ZMB"
 };
 
-// ISO3 → display name for tooltip
 const ISO3_TO_NAME = {
     AFG:"Afghanistan",ALB:"Albania",DZA:"Algeria",AGO:"Angola",AZE:"Azerbaijan",
     ARG:"Argentina",AUS:"Australia",AUT:"Austria",BHS:"Bahamas",BHR:"Bahrain",
@@ -84,7 +81,6 @@ const ISO3_TO_NAME = {
     YEM:"Yemen",ZMB:"Zambia",ZWE:"Zimbabwe"
 };
 
-// regionYearData: [{region, year, sales}] — full multi-year dataset
 export async function createMapChart(regionYearData, containerId = "mapChart") {
     const container = document.getElementById(containerId);
     if (!container) return;
@@ -93,7 +89,6 @@ export async function createMapChart(regionYearData, containerId = "mapChart") {
     const W = rect.width  || 1000;
     const H = rect.height || 560;
 
-    //Year slider 
     const years = [...new Set(regionYearData.map(d => d.year))].sort((a, b) => a - b);
     let currentYear = years[years.length - 1];
 
@@ -106,12 +101,11 @@ export async function createMapChart(regionYearData, containerId = "mapChart") {
                value="${currentYear}" step="1">
         <span class="map-year-val">${currentYear}</span>
     `;
-    container.parentElement.insertBefore(sliderWrap, container);
+    container.parentElement.insertBefore(sliderWrap, container); 
 
     const slider   = sliderWrap.querySelector(".map-year-slider");
     const yearVal  = sliderWrap.querySelector(".map-year-val");
 
-    //Play / Pause button 
     const playBtn = document.createElement("button");
     playBtn.className = "map-play-btn";
     playBtn.textContent = "▶";
@@ -160,7 +154,6 @@ export async function createMapChart(regionYearData, containerId = "mapChart") {
 
     let salesMap = getSalesMap(currentYear);
 
-    //SVG setup 
     const svg = d3.select(container)
         .attr("viewBox", `0 0 ${W} ${H}`)
         .attr("preserveAspectRatio", "none")
@@ -171,7 +164,6 @@ export async function createMapChart(regionYearData, containerId = "mapChart") {
     const g       = svg.append("g");
     const overlay = svg.append("g");
 
-    //Zoom 
     const zoom = d3.zoom()
         .scaleExtent([1, 12])
         .on("zoom", event => g.attr("transform", event.transform));
@@ -185,7 +177,6 @@ export async function createMapChart(regionYearData, containerId = "mapChart") {
     }
     bgRect.on("click", resetZoom);
 
-    //Load world topology 
     let world;
     try {
         world = await d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json");
@@ -209,15 +200,14 @@ export async function createMapChart(regionYearData, containerId = "mapChart") {
 
     let colorScale = makeColorScale(salesMap);
 
-    // Set of ISO3 codes that have data in ANY year (for permanent interactivity)
     const isoWithAnyData = new Set(
         regionYearData.map(d => REGION_TO_ISO[d.region]).filter(Boolean)
     );
 
     function countryFill(d) {
         const iso = NUMERIC_TO_ISO3[+d.id];
-        if (!iso || !isoWithAnyData.has(iso)) return "#0c1420"; // no data ever — blend into bg
-        return salesMap.get(iso) ? colorScale(salesMap.get(iso)) : "#1a2e45"; // data country, but not this year
+        if (!iso || !isoWithAnyData.has(iso)) return "#0c1420"; 
+        return salesMap.get(iso) ? colorScale(salesMap.get(iso)) : "#1a2e45"; 
     }
 
     function countryStroke(d) {
@@ -225,7 +215,6 @@ export async function createMapChart(regionYearData, containerId = "mapChart") {
         return (iso && isoWithAnyData.has(iso)) ? "#1a3a52" : "#0d1a2e";
     }
 
-    //Country paths 
     g.selectAll("path")
         .data(countries.features)
         .enter().append("path")
@@ -233,7 +222,6 @@ export async function createMapChart(regionYearData, containerId = "mapChart") {
         .attr("fill", d => countryFill(d))
         .attr("stroke", d => countryStroke(d))
         .attr("stroke-width", 0.4)
-        // Only data countries are interactive
         .attr("pointer-events", d => {
             const iso = NUMERIC_TO_ISO3[+d.id];
             return (iso && isoWithAnyData.has(iso)) ? "all" : "none";
@@ -302,7 +290,6 @@ export async function createMapChart(regionYearData, containerId = "mapChart") {
                 .transition().delay(730).duration(200).attr("opacity", 1);
         });
 
-    //Year slider handler 
     slider.addEventListener("input", e => {
         currentYear = +e.target.value;
         yearVal.textContent = currentYear;
@@ -318,7 +305,6 @@ export async function createMapChart(regionYearData, containerId = "mapChart") {
             .attr("stroke", d => countryStroke(d));
     });
 
-    //Legend 
     const legendW = 140, legendH = 8;
     const lx = W - legendW - 16, ly = H - 28;
     const defs = svg.append("defs");

@@ -2,7 +2,7 @@
 export function createComparisonChart(data, containerId = "comparisonChart") {
     const el = document.getElementById(containerId);
     if (!el) return {};
-
+    
     const valid = data.filter(d => d.battery_kWh && d.range_km);
     const byName = new Map(valid.map(d => [`${d.brand} ${d.model}`, d]));
 
@@ -51,12 +51,10 @@ export function createComparisonChart(data, containerId = "comparisonChart") {
         sel1.innerHTML = `<option value="">— Select first car —</option>${opts}`;
         sel2.innerHTML = `<option value="">— Select second car —</option>${opts}`;
 
-        // Restore previous selections if they still exist in the filtered pool
         const names = new Set(pool.map(d => `${d.brand} ${d.model}`));
         if (names.has(prev1)) sel1.value = prev1;
         if (names.has(prev2)) sel2.value = prev2;
 
-        // Fall back to top 2 by range from the pool
         if (!sel1.value || !sel2.value) {
             const top2 = [...pool].sort((a, b) => b.range_km - a.range_km).slice(0, 2);
             if (top2[0]) sel1.value = `${top2[0].brand} ${top2[0].model}`;
@@ -100,8 +98,7 @@ export function createComparisonChart(data, containerId = "comparisonChart") {
 
     sel1.addEventListener("change", update);
     sel2.addEventListener("change", update);
-
-    //Segment filter (called by scatter plot click) 
+ 
     function filterBySegment(segment) {
         const pool = segment
             ? valid.filter(d => (d.segment || "Other") === segment)
@@ -121,7 +118,6 @@ export function createComparisonChart(data, containerId = "comparisonChart") {
 
     clearBtn.addEventListener("click", () => filterBySegment(null));
 
-    // Initial state — all cars, top 2 by range pre-selected
     segBar.style.display = "none";
     const allSorted = [...valid].sort((a, b) =>
         `${a.brand} ${a.model}`.localeCompare(`${b.brand} ${b.model}`));

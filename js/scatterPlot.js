@@ -12,26 +12,20 @@ export function createScatterPlot(data, containerId = "scatterPlot", onSegmentSe
     const m = { top: 24, right: 160, bottom: 52, left: 72 };
     const w = W - m.left - m.right;
     const h = H - m.top - m.bottom;
-
-    const valid = data.filter(d => d.battery_kWh && d.range_km);
-
+    const valid = data.filter(d => d.battery_kWh && d.range_km); 
     const svg = d3.select(container)
         .attr("viewBox", `0 0 ${W} ${H}`)
         .attr("preserveAspectRatio", "none");
     svg.selectAll("*").remove();
-
     const g = svg.append("g").attr("transform", `translate(${m.left},${m.top})`);
-
     const segments = [...new Set(valid.map(d => d.segment || "Other"))].filter(Boolean).sort();
     const COLORS   = ["#22c55e","#06b6d4","#8b5cf6","#f97316","#ec4899","#facc15","#38bdf8"];
     const color    = d3.scaleOrdinal().domain(segments).range(COLORS);
-
     const xMax = d3.max(valid, d => d.battery_kWh);
     const yMax = d3.max(valid, d => d.range_km);
     const x = d3.scaleLinear().domain([0, xMax * 1.05]).range([0, w]);
     const y = d3.scaleLinear().domain([0, yMax * 1.05]).range([h, 0]);
 
-    // Grid
     g.append("g")
         .call(d3.axisLeft(y).tickSize(-w).tickFormat(""))
         .call(g => g.select(".domain").remove())
@@ -41,7 +35,6 @@ export function createScatterPlot(data, containerId = "scatterPlot", onSegmentSe
         .call(g => g.select(".domain").remove())
         .call(g => g.selectAll("line").attr("stroke", "#1e293b").attr("stroke-dasharray", "3,3"));
 
-    // Trend line
     const n     = valid.length;
     const sumX  = d3.sum(valid, d => d.battery_kWh);
     const sumY  = d3.sum(valid, d => d.range_km);
@@ -49,7 +42,6 @@ export function createScatterPlot(data, containerId = "scatterPlot", onSegmentSe
     const sumX2 = d3.sum(valid, d => d.battery_kWh ** 2);
     const slope  = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX ** 2);
     const interc = (sumY - slope * sumX) / n;
-
     g.append("line")
         .attr("x1", x(0)).attr("y1", y(interc))
         .attr("x2", x(xMax)).attr("y2", y(slope * xMax + interc))
@@ -58,7 +50,6 @@ export function createScatterPlot(data, containerId = "scatterPlot", onSegmentSe
         .attr("x", x(xMax * 0.55)).attr("y", y(slope * xMax * 0.55 + interc) - 8)
         .attr("fill", "#4b5563").attr("font-size", 11).attr("text-anchor", "middle").text("trend");
 
-    // Axes
     g.append("g").attr("transform", `translate(0,${h})`)
         .call(d3.axisBottom(x).ticks(6))
         .call(g => g.select(".domain").attr("stroke", "#334155"))
@@ -78,12 +69,11 @@ export function createScatterPlot(data, containerId = "scatterPlot", onSegmentSe
         .attr("transform", `translate(-54,${h / 2}) rotate(-90)`)
         .text("Range (km)");
 
-    // Dots
     g.selectAll(".dot")
         .data(valid).enter().append("circle")
         .attr("class", "dot")
         .attr("cx", d => x(d.battery_kWh)).attr("cy", d => y(d.range_km))
-        .attr("r", 0)
+        .attr("r", 0) 
         .attr("fill", d => color(d.segment || "Other"))
         .attr("fill-opacity", 0.72)
         .attr("stroke", "#0f172a").attr("stroke-width", 0.5)
@@ -97,23 +87,20 @@ export function createScatterPlot(data, containerId = "scatterPlot", onSegmentSe
             showTooltip(event, lines);
         })
         .on("mousemove", moveTooltip).on("mouseout", hideTooltip)
-        .transition().duration(600).delay((_, i) => i * 1.5).ease(d3.easeCubicOut)
+        .transition().duration(600).delay((_, i) => i * 1.5).ease(d3.easeCubicOut) 
         .attr("r", 5);
 
-    //Segment selection state 
     let selectedSegment = null;
 
     function applySelection(seg) {
         selectedSegment = seg;
-        // D3 UPDATE — transition dot appearance
         g.selectAll(".dot")
             .transition().duration(300)
             .attr("fill-opacity", d =>
-                !seg || (d.segment || "Other") === seg ? 0.72 : 0.08)
+                !seg || (d.segment || "Other") === seg ? 0.72 : 0.08) 
             .attr("r", d =>
-                !seg || (d.segment || "Other") === seg ? 5 : 3);
+                !seg || (d.segment || "Other") === seg ? 5 : 3); 
 
-        // Update legend highlight
         legend.selectAll(".leg-item").each(function(s) {
             const isActive = !seg || s === seg;
             d3.select(this).select("circle")
@@ -127,7 +114,7 @@ export function createScatterPlot(data, containerId = "scatterPlot", onSegmentSe
         if (onSegmentSelect) onSegmentSelect(seg);
     }
 
-    //Legend (clickable — cross-chart trigger) 
+    
     const legend = g.append("g").attr("transform", `translate(${w + 18}, 10)`);
     segments.forEach((seg, i) => {
         const ly  = i * 26;
@@ -142,16 +129,13 @@ export function createScatterPlot(data, containerId = "scatterPlot", onSegmentSe
             .attr("x", 17).attr("y", ly + 9)
             .attr("fill", "#9ca3af").attr("font-size", 12).text(seg);
 
-        // Click — toggle segment selection
         row.on("click", () => {
             applySelection(selectedSegment === seg ? null : seg);
         });
 
-        // Hover hint
         row.append("title").text(`Click to highlight ${seg} models`);
     });
 
-    // Clear selection hint text
     legend.append("text")
         .attr("x", 0).attr("y", segments.length * 26 + 16)
         .attr("fill", "#4b5563").attr("font-size", 10)

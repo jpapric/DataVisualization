@@ -1,17 +1,11 @@
-"""
-EV Data Cleaning Script
-Outputs processed JSON files to data/processed/ for D3.js consumption.
-"""
-
 import csv
 import json
-import os
-from collections import defaultdict
+import os 
+from collections import defaultdict 
 
-BASE = os.path.dirname(__file__)
-OUT = os.path.join(BASE, "processed")
+BASE = os.path.dirname(__file__) 
+OUT = os.path.join(BASE, "processed") 
 os.makedirs(OUT, exist_ok=True)
-
 
 def write_json(name, data):
     path = os.path.join(OUT, name)
@@ -38,11 +32,11 @@ with open(os.path.join(BASE, "ev_sales.csv"), encoding="utf-8") as f:
             value = float(row["value"])
         except ValueError:
             continue
-        if year > 2024:
+        if year > 2024: 
             continue
         region = row["region"].strip()
         powertrain = row["powertrain"].strip() or "Unknown"
-
+ 
         sales_by_year[year] += value
         sales_by_region_year[region][year] += value
         powertrain_by_year[year][powertrain] += value
@@ -131,11 +125,9 @@ with open(os.path.join(BASE, "ev_population.csv"), encoding="utf-8") as f:
 top_makes = sorted(make_counts.items(), key=lambda x: x[1], reverse=True)[:15]
 write_json("top_manufacturers.json", [{"make": m, "count": c} for m, c in top_makes])
 
-# Tesla year trend for sparkline
 tesla_by_year = make_year_counts.get("Tesla", {})
 write_json("tesla_by_year.json", [{"year": y, "count": c} for y, c in sorted(tesla_by_year.items())])
 
-# Segment × year heatmap (only years 2015–2024 for cleaner display)
 SEGMENTS = ['Compact', 'Sedan', 'SUV', 'Luxury', 'Truck', 'Van']
 YEARS = list(range(2015, 2025))
 heatmap_rows = []
@@ -204,10 +196,9 @@ with open(os.path.join(BASE, "ev_specs.csv"), encoding="utf-8") as f:
 write_json("ev_specs.json", specs)
 
 
-# 4. FUTURE PROJECTIONS (IEA scenarios, World, all modes) 
 print("Processing future projections …")
 
-proj_agg = defaultdict(lambda: defaultdict(float))  # (scenario, year) -> total sales
+proj_agg = defaultdict(lambda: defaultdict(float))  
 
 with open(os.path.join(BASE, "ev_sales.csv"), encoding="utf-8") as f:
     reader = csv.DictReader(f)

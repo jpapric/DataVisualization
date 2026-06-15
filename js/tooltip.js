@@ -1,4 +1,3 @@
-// Shared tooltip singleton — import getTooltip() in every chart module
 let _tip = null;
 
 export function getTooltip() {
@@ -32,11 +31,10 @@ function positionTooltip(event) {
     let left = event.clientX + margin;
     let top  = event.clientY - th / 2;
 
-    // flip left if it overflows right edge
     if (left + tw > window.innerWidth - 8) {
         left = event.clientX - tw - margin;
     }
-    // clamp top within viewport
+    // osigurava da tooltip ne izlazi izvan vidljivog područja prozora
     top = Math.max(8, Math.min(top, window.innerHeight - th - 8));
 
     tip.style("left", left + "px").style("top", top + "px");

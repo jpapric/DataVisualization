@@ -22,7 +22,6 @@ export function createStackedArea(data, containerId = "heatmap") {
     const segments = [...new Set(data.map(d => d.segment))].filter(Boolean).sort();
     const years    = [...new Set(data.map(d => d.year))].sort((a, b) => a - b);
 
-    // Pivot: [{year, Compact: n, SUV: n, ...}]
     const pivoted = years.map(year => {
         const row = { year };
         segments.forEach(seg => {
@@ -32,8 +31,8 @@ export function createStackedArea(data, containerId = "heatmap") {
         return row;
     });
 
+    
     const series = d3.stack().keys(segments)(pivoted);
-
     const COLORS = ["#22c55e", "#06b6d4", "#8b5cf6", "#f97316", "#ec4899", "#facc15"];
     const color  = d3.scaleOrdinal().domain(segments).range(COLORS);
 
@@ -42,20 +41,18 @@ export function createStackedArea(data, containerId = "heatmap") {
         .domain([0, d3.max(series, s => d3.max(s, d => d[1]))])
         .range([h, 0]).nice();
 
-    // Clip path for draw-in animation
     const clipId = "area-clip-" + containerId;
     svg.append("defs").append("clipPath").attr("id", clipId)
         .append("rect").attr("x", 0).attr("y", 0).attr("width", 0).attr("height", h + m.top)
         .transition().duration(1200).ease(d3.easeCubicOut)
         .attr("width", w);
 
-    // Grid lines
     g.append("g")
         .call(d3.axisLeft(y).tickSize(-w).tickFormat(""))
         .call(g => g.select(".domain").remove())
         .call(g => g.selectAll("line").attr("stroke", "#1e293b").attr("stroke-dasharray", "3,3"));
 
-    // Stacked areas
+
     const area = d3.area()
         .x(d => x(d.data.year))
         .y0(d => y(d[0]))
@@ -70,7 +67,7 @@ export function createStackedArea(data, containerId = "heatmap") {
         .attr("stroke", d => color(d.key))
         .attr("stroke-width", 1.2)
         .attr("stroke-opacity", 0.6)
-        .attr("clip-path", `url(#${clipId})`)
+        .attr("clip-path", `url(#${clipId})`) 
         .attr("d", area)
         .on("mousemove", (event, d) => {
             const [mx] = d3.pointer(event, g.node());
@@ -81,14 +78,12 @@ export function createStackedArea(data, containerId = "heatmap") {
         })
         .on("mouseout", hideTooltip);
 
-    // X axis
     g.append("g").attr("transform", `translate(0,${h})`)
         .call(d3.axisBottom(x).tickFormat(d3.format("d")).tickValues(years))
         .call(g => g.select(".domain").attr("stroke", "#334155"))
         .call(g => g.selectAll("text").attr("fill", "#9ca3af").attr("font-size", 13))
         .call(g => g.selectAll("line").attr("stroke", "#334155"));
 
-    // Y axis
     g.append("g")
         .call(d3.axisLeft(y).ticks(6)
             .tickFormat(d => d >= 1e6 ? d3.format(".1f")(d / 1e6) + "M"
@@ -97,7 +92,6 @@ export function createStackedArea(data, containerId = "heatmap") {
         .call(g => g.selectAll("text").attr("fill", "#9ca3af").attr("font-size", 13))
         .call(g => g.selectAll("line").attr("stroke", "#334155"));
 
-    // Axis labels
     g.append("text").attr("fill", "#64748b").attr("font-size", 13)
         .attr("text-anchor", "middle").attr("x", w / 2).attr("y", h + 36)
         .text("Year");
@@ -106,7 +100,6 @@ export function createStackedArea(data, containerId = "heatmap") {
         .attr("transform", `translate(-54,${h / 2}) rotate(-90)`)
         .text("Registrations");
 
-    // Legend
     const legend = g.append("g").attr("transform", `translate(${w + 18}, 10)`);
     segments.forEach((seg, i) => {
         const ly = i * 26;
